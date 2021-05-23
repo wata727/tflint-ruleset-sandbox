@@ -20,14 +20,8 @@ archives:
     format: zip
     files:
       - none*
-changelog:
-  skip: true
 checksum:
   name_template: 'checksums.txt'
-release:
-  github:
-    owner: wata727
-    name: tflint-ruleset-sandbox
-  draft: true
-snapshot:
-  name_template: "{{ .Tag }}-dev"
+signs:
+  - artifacts: checksum
+    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
