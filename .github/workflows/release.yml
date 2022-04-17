@@ -7,6 +7,9 @@ on:
     tags:
     - v*.*.*
 
+permissions:
+  id-token: write
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
@@ -23,6 +26,7 @@ jobs:
       with:
         gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
         passphrase: ${{ secrets.PASSPHRASE }}
+    - uses: sigstore/cosign-installer@v2.2.1
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
       with:
