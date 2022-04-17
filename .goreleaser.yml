@@ -25,3 +25,17 @@ checksum:
 signs:
   - artifacts: checksum
     args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+  - id: cosign
+    cmd: cosign
+    env:
+    - COSIGN_EXPERIMENTAL=1
+    signature: '${artifact}.keyless.sig'
+    certificate: '${artifact}.pem'
+    output: true
+    artifacts: checksum
+    args:
+      - sign-blob
+      - '--output-certificate=${certificate}'
+      - '--output-signature=${signature}'
+      - '${artifact}'
+
