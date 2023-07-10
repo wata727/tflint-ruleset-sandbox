@@ -3,32 +3,27 @@
 env:
   - CGO_ENABLED=0
 builds:
-  - goos:
-      - linux
-      - darwin
-      - freebsd
-      - netbsd
-      - openbsd
-      - windows
-    goarch:
-      - 386
-      - amd64
-      - arm
+  - targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_386
+      - linux_amd64
+      - linux_arm
+      - linux_arm64
+      - windows_386
+      - windows_amd64
 archives:
   - id: zip
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format: zip
     files:
       - none*
+changelog:
+  skip: true
 checksum:
   name_template: 'checksums.txt'
 signs:
-  - artifacts: checksum
-    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
-  - id: cosign
-    cmd: cosign
-    env:
-    - COSIGN_EXPERIMENTAL=1
+  - cmd: cosign
     signature: '${artifact}.keyless.sig'
     certificate: '${artifact}.pem'
     output: true
@@ -38,4 +33,11 @@ signs:
       - '--output-certificate=${certificate}'
       - '--output-signature=${signature}'
       - '${artifact}'
-
+      - --yes
+release:
+  github:
+    owner: wata727
+    name: tflint-ruleset-sandbox
+  draft: true
+snapshot:
+  name_template: "{{ .Tag }}-dev"

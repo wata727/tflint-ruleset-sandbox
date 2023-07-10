@@ -3,12 +3,15 @@ package rules
 import (
 	"fmt"
 
-	hcl "github.com/hashicorp/hcl/v2"
+	"github.com/terraform-linters/tflint-plugin-sdk/hclext"
+	"github.com/terraform-linters/tflint-plugin-sdk/logger"
 	"github.com/terraform-linters/tflint-plugin-sdk/tflint"
 )
 
 // AwsInstanceExampleTypeRule checks whether ...
-type AwsInstanceExampleTypeRule struct{}
+type AwsInstanceExampleTypeRule struct {
+	tflint.DefaultRule
+}
 
 // NewAwsInstanceExampleTypeRule returns a new rule
 func NewAwsInstanceExampleTypeRule() *AwsInstanceExampleTypeRule {
@@ -26,7 +29,7 @@ func (r *AwsInstanceExampleTypeRule) Enabled() bool {
 }
 
 // Severity returns the rule severity
-func (r *AwsInstanceExampleTypeRule) Severity() string {
+func (r *AwsInstanceExampleTypeRule) Severity() tflint.Severity {
 	return tflint.ERROR
 }
 
@@ -37,16 +40,36 @@ func (r *AwsInstanceExampleTypeRule) Link() string {
 
 // Check checks whether ...
 func (r *AwsInstanceExampleTypeRule) Check(runner tflint.Runner) error {
-	return runner.WalkResourceAttributes("aws_instance", "instance_type", func(attribute *hcl.Attribute) error {
-		var instanceType string
-		err := runner.EvaluateExpr(attribute.Expr, &instanceType, nil)
+	// This rule is an example to get a top-level resource attribute.
+	resources, err := runner.GetResourceContent("aws_instance", &hclext.BodySchema{
+		Attributes: []hclext.AttributeSchema{
+			{Name: "instance_type"},
+		},
+	}, nil)
+	if err != nil {
+		return err
+	}
 
-		return runner.EnsureNoError(err, func() error {
-			return runner.EmitIssueOnExpr(
+	// Put a log that can be output with `TFLINT_LOG=debug`
+	logger.Debug(fmt.Sprintf("Get %d instances", len(resources.Blocks)))
+
+	for _, resource := range resources.Blocks {
+		attribute, exists := resource.Body.Attributes["instance_type"]
+		if !exists {
+			continue
+		}
+
+		err := runner.EvaluateExpr(attribute.Expr, func (instanceType string) error {
+			return runner.EmitIssue(
 				r,
 				fmt.Sprintf("instance type is %s", instanceType),
-				attribute.Expr,
+				attribute.Expr.Range(),
 			)
-		})
-	})
+		}, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
